@@ -10,6 +10,11 @@ db = SQLAlchemy(app)
 
 from models import FTasks, User
 
+def flash_errors(form):
+	for field, errors in form.errors.items():
+		for error in errors:
+			flash(u"Error in the %s field - %s" %(getattr(form,field).label.text,error),'error')
+
 @app.route('/register/',methods=['GET','POST'])
 def register():
 	error=None
@@ -24,6 +29,8 @@ def register():
 		db.session.commit()
 		flash('Thanks for registering. Please login.')
 		return redirect(url_for('login'))
+	else:
+		flash_errors(form)
 	return render_template('register.html',form=form,error=error)
 
 def login_required(test):
@@ -39,6 +46,7 @@ def login_required(test):
 @app.route('/logout')
 def logout():
 	session.pop('logged_in',None)
+	session.pop('user_id',None)
 	flash('You are logged out.  Bye!')
 	return redirect(url_for('login'))
 
@@ -51,6 +59,7 @@ def login():
 			error='Invalid username or password.'
 		else:
 			session['logged_in']=True
+			session['user_id']=u.id
 			flash('You are logged in. Go Crazy')
 			return redirect(url_for('tasks'))
 	return render_template('login.html',form=LoginForm(request.form),error=error)
@@ -69,15 +78,17 @@ def new_task():
 	if form.validate_on_submit():
 		new_task = FTasks(
 					form.name.data,
+					form.posted_date.data,
 					form.due_date.data,
 					form.priority.data,
-					form.posted_date.data,
 					'1',
-					'1'
+					session['user_id']
 					)
 		db.session.add(new_task)
 		db.session.commit()
 		flash('New entry was successfully added.')
+	else:
+		flash_errors(form)
 	return redirect(url_for('tasks'))
 
 @app.route('/complete/<int:task_id>/',)
