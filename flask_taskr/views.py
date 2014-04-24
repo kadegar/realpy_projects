@@ -2,13 +2,13 @@
 from flask import Flask, flash, redirect, render_template, request, session, url_for, g
 from functools import wraps
 from flask.ext.sqlalchemy import SQLAlchemy
+from forms import AddTask,RegisterForm, LoginForm
 
 app = Flask(__name__)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 
 from models import FTasks, User
-from forms import AddTask,RegisterForm, LoginForm
 
 @app.route('/register/',methods=['GET','POST'])
 def register():
@@ -60,7 +60,7 @@ def login():
 def tasks():
 	open_tasks=db.session.query(FTasks).filter_by(status='1').order_by(FTasks.due_date.asc())
 	closed_tasks=db.session.query(FTasks).filter_by(status='0').order_by(FTasks.due_date.asc())	
-	return render_template('tasks.html', open_tasks=open_tasks, closed_tasks=closed_tasks)	
+	return render_template('tasks.html', form = AddTask(request.form), open_tasks=open_tasks, closed_tasks=closed_tasks)	
 
 @app.route('/add/', methods=['POST'])
 @login_required
@@ -71,6 +71,8 @@ def new_task():
 					form.name.data,
 					form.due_date.data,
 					form.priority.data,
+					form.posted_date.data,
+					'1',
 					'1'
 					)
 		db.session.add(new_task)
