@@ -15,6 +15,15 @@ def flash_errors(form):
 		for error in errors:
 			flash(u"Error in the %s field - %s" %(getattr(form,field).label.text,error),'error')
 
+@app.errorhandler(500)
+def internal_error(error):
+	db.session.rollback()
+	return render_template('500.html'),500
+
+@app.errorhandler(404)
+def internal_error(error):
+	return render_template('404.html'),404
+
 @app.route('/register/',methods=['GET','POST'])
 def register():
 	error=None
